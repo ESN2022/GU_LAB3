@@ -8,7 +8,7 @@ il faut noter que les valeurs d'accélération doivent être obtenues via le pro
 J'ai d'abord construit un système de base avec **un noyau logiciel NIOS II**, **un module d'horloge**, **un module de mémoire**, **un module JTAG** pour la communication avec le DE-10 Lite.
 Ensuite, j'ai également dû ajouter différents **modules PIO** pour gérer les entrées et les sorties, ainsi que **le module timer** et, surtout, **le module I²C open source**.
 L'architecture du système se présente comme suit :
-![image]()
+![image](https://github.com/ESN2022/GU_LAB3/blob/main/LAB3.jpg)
 
 
 

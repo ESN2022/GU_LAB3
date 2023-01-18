@@ -1,9 +1,4 @@
-/*
- * Lab3_definitions.h
- *
- *  Created on: 17 janv. 2023
- *      Author: Ahmed
- */
+
 
 #include <stdio.h>
 #include "sys/alt_stdio.h"

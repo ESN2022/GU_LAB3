@@ -1,9 +1,3 @@
-/*
- * Lab3_definitions.c
- *
- *  Created on: 13 janv. 2023
- *      Author: Ahmed
- */
 
 #include "Lab3_definitions.h"
 

@@ -11,8 +11,8 @@ L'architecture du système se présente comme suit :
 ![image](https://github.com/ESN2022/GU_LAB3/blob/main/LAB3.jpg)
 
 Le **QSYS** est le suivant :
-
-
+![image](https://github.com/ESN2022/GU_LAB3/blob/main/qsys_1.png)
+![image](https://github.com/ESN2022/GU_LAB3/blob/main/qsys_2.png)
 
 
 

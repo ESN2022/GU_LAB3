@@ -92,8 +92,6 @@
 
 *.avi
 *.mkv
-
-*.jpeg
 *.pgm
 
 # IDE

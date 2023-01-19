@@ -1,3 +1,4 @@
+/***************************** Fiches En tête *******************************/
 #include "system.h"
 #include "sys/alt_stdio.h"
 #include "alt_types.h"
@@ -11,143 +12,200 @@
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"
 
-// les adresses de registres de ADXL345
+
+/***************************** define Registre et Valeur *******************************/
+// Addresse
+#define ADDR 0x1d
+
+// Registre control et format
+#define ACT_INACT_CTL 0X27
+#define POWER_CTL 0x2D
+#define DATA_FORMAT 0x31
+
+// DATA Registre X,Y,Z
 #define ADXL345_DATAX0 0x32
 #define ADXL345_DATAX1 0x33
 #define ADXL345_DATAY0 0x34
 #define ADXL345_DATAY1 0x35
 #define ADXL345_DATAZ0 0x36
 #define ADXL345_DATAZ1 0x37
-#define ADXL345_OFSX   0x1E
-#define ADXL345_OFSY   0x1F
-#define ADXL345_OFSZ   0x20
-#define DATA_FORMAT    0x37
-#define ACT_INACT_CTL  0x27
-#define POWER_CT       0x2D
 
-// les variables pour stocker les valeurs de X, Y et Z, et switch
-alt_16 X,Y,Z, data[6], switch_value;
+// Registre OFFSET => Valeur d'offset
+#define ADXL345_OFSX 0x1E
+#define ADXL345_OFSY 0x1F
+#define ADXL345_OFSZ 0x20
 
-// les fonctions pour lire et ecrire dans les registres
-void write_register(alt_16 x,int value);
-int read_register(alt_16 x);
-alt_32 int_to_bcd(alt_32 int_value);
+#define CALIBX 0
+#define CALIBY 2
+#define CALIBZ 18
+#define SPEED 100000			// Pour I2C Initialisation
 
-// fonction pour lire et afficher les valeurs des axes
-void axes();
 
-void write_register(alt_16 x, int value) {
-  I2C_start(OPENCORES_I2C_0_BASE, 0x1D, 0);
-  I2C_write(OPENCORES_I2C_0_BASE, x, 0);
-  I2C_write(OPENCORES_I2C_0_BASE, value, 1);
+int Tmp0,Tmp1;
+
+/***************************** Fonction Lecture Ecriture *******************************/
+
+int lecture_i2c(int base,int addr){
+	
+	int data = 0;
+	I2C_start(base,ADDR, 0);
+	I2C_write(base,addr,0);
+	
+	I2C_start(base,ADDR,1);
+	data = I2C_read(base,1);
+	
+	return data;
 }
 
-int read_register(alt_16 x) {
-  I2C_start(OPENCORES_I2C_0_BASE, 0x1D, 0);
-  I2C_write(OPENCORES_I2C_0_BASE, x, 0);
-  I2C_start(OPENCORES_I2C_0_BASE, 0x1D, 1);
-  return I2C_read(OPENCORES_I2C_0_BASE, 1);
+void ecriture_i2c(int base,int addr,int value){
+	I2C_start(base, ADDR, 0);
+	I2C_write(base,addr,0);
+	I2C_write(base,value,1);
 }
 
-alt_32 int_to_bcd(alt_32 int_value) {
-  alt_32 result = 0;
-  if (int_value < 0) {
-    int_value = -int_value;
-    result = 15 << 16;
-  } else {
-    result = 14 << 16;
-  }
-  char bcd_value[4];
-  bcd_value[0] = int_value % 10;
-  bcd_value[1] = int_value / 10 % 10;
-  bcd_value[2] = int_value / 100 % 10;
-  bcd_value[3] = int_value / 1000 % 10;
-  return result = result + (bcd_value[3] << 12) + (bcd_value[2] << 8) + (bcd_value[1] << 4) + bcd_value[0];
+
+/***************************** Fonction int => SEG & Affichage SEG*******************************/
+
+void affichage_SEG(int Tmp0,int Tmp1){
+	int a0,a1,a;
+	a0 = lecture_i2c(OPENCORES_I2C_0_BASE,Tmp0);
+	a1 = lecture_i2c(OPENCORES_I2C_0_BASE,Tmp1);
+	a = (a1<<8)|a0;
+	a =	(short) a;
+	a = a * 4;
+	int2seg(a);
 }
 
-void axes() {
-  switch (switch_value) {
-  case 0b00:
-    IOWR_ALTERA_AVALON_PIO_DATA(SEG_BASE, (10 << 20) + int_to_bcd(X * 4));
-    printf("Valeur pour switch 00: x\n");
-    break;
-  case 0b01:
-    IOWR_ALTERA_AVALON_PIO_DATA(SEG_BASE, (11 << 20) + int_to_bcd(Y * 4));
-    printf("Valeur pour switch 01: y\n");
-    break;
-  case 0b10:
-    IOWR_ALTERA_AVALON_PIO_DATA(SEG_BASE, (12 << 20) + int_to_bcd(Z * 4));
-    printf("Valeur pour switch 10: z\n");
-    break;
-  }
+void int2seg(int value_int){
+	int i,j,k,l,m,signe = 0;
+	
+	// Signes + / -
+	if(value_int < 0){
+		signe = 0b00111111;
+		value_int = - value_int;
+	}
+	else
+		signe = 0b01000000;	
+
+	
+	i = value_int % 10;				// digit
+	j = value_int/10 % 10;			// 10 digit
+	k = value_int/100 % 10;			// 100 digit
+	l = value_int/1000 % 10;		// 1000 digit
+	m = value_int/10000 % 10;		// 10000 digit
+
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG0_BASE,i);
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG1_BASE,j);
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG2_BASE,k);
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG3_BASE,l);
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG4_BASE,m);
+	IOWR_ALTERA_AVALON_PIO_DATA(SEG5_BASE,signe);
 }
 
-static void timer_interrupt(void * Context, alt_u32 id);
-static void irqhandler_switch(void * context);
-
-int main() {
-  // Initialisation de la communication I2C
-  I2C_init(OPENCORES_I2C_0_BASE, ALT_CPU_FREQ, 100000);
-
-  // Vérification de la connexion avec la périphérique I2C
-  if (I2C_start(OPENCORES_I2C_0_BASE, 0x1D, 0) == 0) {
-    printf("connection établie\n");
-  } else {
-    printf("error de connexion\n");
-  }
-  // Initialisation et configuration du timer pour les interruptions
-  IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_0_BASE, 0);
-  alt_ic_isr_register(TIMER_0_IRQ_INTERRUPT_CONTROLLER_ID, TIMER_0_IRQ, (void * ) timer_interrupt, NULL, 0);
-  IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER_0_BASE, 0x07);
-
-  // Initialisation et configuration des commutateurs pour les interruptions
-  IOWR_ALTERA_AVALON_PIO_IRQ_MASK(SWITCH_BASE, 0b1111);
-  IOWR_ALTERA_AVALON_PIO_EDGE_CAP(SWITCH_BASE, 0x0);
-  alt_ic_isr_register(SWITCH_IRQ_INTERRUPT_CONTROLLER_ID, SWITCH_IRQ, (void * ) irqhandler_switch, NULL, NULL);
-
-  // Ecriture dans les registres pour configurer l'acceleromètre
-  write_register(ACT_INACT_CTL, 240);
-  write_register(POWER_CT, 8);
-  write_register(DATA_FORMAT, 8);
-  write_register(ADXL345_OFSX, 1);
-  write_register(ADXL345_OFSY, 0);
-  write_register(ADXL345_OFSZ, 2);
-
-  // Lecture de la valeur des commutateurs
-  switch_value = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
-
-  while (1);
-  return 0;
+// Calibration X,Y,Z
+void calibration(){
+	ecriture_i2c(OPENCORES_I2C_0_BASE,ADXL345_OFSX,CALIBX);
+	usleep(100000);
+	ecriture_i2c(OPENCORES_I2C_0_BASE,ADXL345_OFSY,CALIBY);
+	usleep(100000);
+	ecriture_i2c(OPENCORES_I2C_0_BASE,ADXL345_OFSZ,CALIBZ);
+	usleep(100000);
 }
 
-static void timer_interrupt(void * Context, alt_u32 id) {
-  // Lecture des données de l'acceleromètre
-  data[0] = read_register(ADXL345_DATAX0);
-  data[1] = read_register(ADXL345_DATAX1);
-  // combiner les données X
-  X = (data[1] << 8) | data[0];
+void affichache_UART(){
+	int x1,x0,y1,y0,z1,z0;
 
-  data[2] = read_register(ADXL345_DATAY0);
-  data[3] = read_register(ADXL345_DATAY1);
-  // combiner les données Y
-  Y = (data[3] << 8) | data[2];
+	x0 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAX0);
+	x1 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAX1);
+	y0 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAY0);
+	y1 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAY1);
+	z0 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAZ0);
+	z1 = lecture_i2c(OPENCORES_I2C_0_BASE,ADXL345_DATAZ1);
+	
+	alt_printf("X= %x, Y= %x, Z= %x\n",(x1<<8)|x0,(y1<<8)|y0,(z1<<8)|z0);
 
-  data[4] = read_register(ADXL345_DATAZ0);
-  data[5] = read_register(ADXL345_DATAZ1);
-  // combiner les données Z
-  Z = (data[5] << 8) | data[4];
-
-  // Affichage des valeurs X, Y, Z dans la console
-  printf("X: %d Y: %d Z: %d \n", X * 4, Y * 4, Z * 4);
-
-  // Appel de la fonction pour afficher les valeurs de X, Y, Z sur les afficheurs 7 segments en fonction de la position des switchs
-  axes();
-
-  // Réinitialisation du statut du timer
-  IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_0_BASE, 0);
 }
 
-static void irqhandler_switch(void * context) {
-  switch_value = IORD_ALTERA_AVALON_PIO_DATA(SWITCH_BASE);
-  IOWR_ALTERA_AVALON_PIO_EDGE_CAP(SWITCH_BASE, 0x0);
+// Initialisation du ADXL345
+void init_ADXL345(){
+	alt_printf("Initialisation I2C\n");
+	I2C_init(OPENCORES_I2C_0_BASE,ALT_CPU_FREQ,SPEED);
+	if(I2C_start(OPENCORES_I2C_0_BASE,ADDR,0)== 0){
+		alt_printf("Init ok\n");
+	}
+	// POWER_CTL
+	alt_printf("Ecriture 0X08 -> POWER_CTL\n");
+	ecriture_i2c(OPENCORES_I2C_0_BASE,POWER_CTL,0x08);
+	usleep(100000);
+	alt_printf("Lecture POWER_CTL\n");
+	alt_printf("POWER_CTL = %x\n",lecture_i2c(OPENCORES_I2C_0_BASE,POWER_CTL));
+	// DATA_FORMAT	
+	alt_printf("Ecriture 0x07 -> DATA_FORMAT\n");
+	ecriture_i2c(OPENCORES_I2C_0_BASE,DATA_FORMAT,0x07);
+	usleep(100000);
+	// DATA_FORMAT
+	alt_printf("Lecture DATA_FORMAT\n");
+	alt_printf("DATA_FORMAT = %x\n\n",lecture_i2c(OPENCORES_I2C_0_BASE,DATA_FORMAT));
+	
+	Tmp0 = ADXL345_DATAX0;
+	Tmp1 = ADXL345_DATAX1;
+}
+/***************************** Interruption *******************************/
+// Interruption PUSH
+static void push_interrupt(void *Context, alt_u32 id){
+	switch(Tmp0){
+		case ADXL345_DATAX0:
+			alt_printf("switch sur Y\n\n");
+			Tmp0 = ADXL345_DATAY0;
+			Tmp1 = ADXL345_DATAY1;
+			break;
+		case ADXL345_DATAY0:
+			alt_printf("switch sur Z\n\n");
+			Tmp0 = ADXL345_DATAZ0;
+			Tmp1 = ADXL345_DATAZ1;
+			break;
+		case ADXL345_DATAZ0:
+			alt_printf("switch sur X\n\n");
+			Tmp0 = ADXL345_DATAX0;
+			Tmp1 = ADXL345_DATAX1;
+			break;
+		default:
+			alt_printf("switch sur Z\n\n");
+			Tmp0 = ADXL345_DATAX0;
+			Tmp1 = ADXL345_DATAX1;
+			break;
+	}	
+	IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BASE,0b1);
+}
+
+// Initialisation_interruption_push
+void init_push_interrupt(){
+	IOWR_ALTERA_AVALON_PIO_IRQ_MASK(PUSH_BASE,0b1);
+	IOWR_ALTERA_AVALON_PIO_EDGE_CAP(PUSH_BASE,0b1);	
+	if(alt_irq_register(PUSH_IRQ,NULL,push_interrupt) != 0){
+		alt_printf("Erreur interruption push\n");
+}
+}
+// Interruption TIMER et Affichage
+static void timer_interrupt(void *Context, alt_u32 id){
+
+	affichache_UART();
+	affichage_SEG(Tmp0,Tmp1);
+	
+	// Effacer l'interruption
+	IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_0_BASE, 0b01);
+}
+
+// Initialisation_interruption_timer
+void init_timer_interrupt(){
+	if(alt_irq_register(TIMER_0_IRQ,NULL, timer_interrupt) != 0){
+		alt_printf("Erreur interruption timer\n");
+	}
+}
+/******************************************** main ****************************************************/
+int main(){	
+	init_ADXL345();
+	calibration();
+	init_push_interrupt();
+	init_timer_interrupt();
 }

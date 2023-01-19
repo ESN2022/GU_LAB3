@@ -25,3 +25,4 @@ https://user-images.githubusercontent.com/90764364/213461092-8e3481bf-ecf0-4405-
 
 
 # Conclusion
+Ce TP a été la première fois que j'ai utilisé la co-conception dans le développement d'un produit réel, et j'ai essayé d'ajouter des IPs qui n'étaient pas dans le système, et j'ai amélioré ma compréhension et mon application du protocole de communication I²C. La communication entre le capteur et la carte a été le point le plus difficile dans ce TP, et aussi le domaine où j'ai passé le plus de temps. Enfin, en raison des délais limités, je n'ai pas très bien calibré mes capteurs et je n'ai donc pas obtenu de résultats très précis, sur lequel je dois encore avancer.

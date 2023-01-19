@@ -24,4 +24,4 @@ begin
             when others => S <= "11111110";
         end case;
     end process;
-end architecture;
+end architecture; 

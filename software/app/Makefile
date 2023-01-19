@@ -142,7 +142,7 @@ ACDS_VERSION := 18.1
 ELF := C:/Users/hp/Desktop/refaire-tp/LAB_3/software/app/lab3.elf
 
 # Paths to C, C++, and assembly source files.
-C_SRCS += ../../../../../../../intelFPGA_lite/18.1/main.c
+C_SRCS += C:/Users/hp/Desktop/refaire-tp/LAB_3/software/app/main.c
 CXX_SRCS :=
 ASM_SRCS :=
 

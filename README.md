@@ -19,6 +19,8 @@ Le programme se compose principalement du module de lecture-écriture I2C, du mo
 
 
 Enfin, nous pouvons voir que le DE10-Lite affiche l'accélération de chaque axe sur l'affichage de 7 segments et met à jour les valeurs d'accélération une fois par seconde, le bouton peut également  modifier pour afficher les valeurs d'accélération sur les différents axes.
+
+
 https://user-images.githubusercontent.com/90764364/213461092-8e3481bf-ecf0-4405-9617-c6a2b43d9c23.mp4
 
 
